@@ -73,6 +73,13 @@ REST APIs use HTTP methods/verbs to describe actions:
 | PUT    | Update data | Update user |
 | DELETE | Remove data | Delete user |
 
+PUT vs PATCH
+| Method | Meaning                 |
+| ------ | ----------------------- |
+| PUT    | Replace entire resource |
+| PATCH  | Partial update          |
+
+
 
 | Method | Action | Changes Data? |
 | ------ | ------ | ------------- |
@@ -110,3 +117,89 @@ HTTP methods = what action
 | **DELETE**  | 200, 204, 404         | 200 → deleted with response<br>204 → deleted with no content<br>404 → resource not found |
 | **ERROR**   | 500                   | Server-side failure (exception, crash)                                                   |
 
+
+## REST Constraints
+
+1)Client–Server
+
+Client and server are independent
+
+Frontend doesn’t care how backend is implemented
+
+2)Stateless
+
+Server does NOT store client session
+
+Every request contains all required info (e.g., JWT)
+
+REST APIs are stateless, meaning that each request needs to include all the information necessary for processing it. In other words, REST APIs do not require any server-side sessions. Server applications aren’t allowed to store any data related to a client request.
+
+3)Cacheable
+
+Responses can be cached for performance
+
+4)Uniform Interface
+
+Consistent URLs
+
+Proper HTTP methods
+
+Standard status codes
+
+5)Layered System
+
+Architechtural style of hierarchical layers by constraining component behavior. In a layered system, each component cannot see beyond the immediate layer they are interacting with. 
+
+Client doesn’t know if it’s talking to gateway, load balancer, or actual server
+
+6)Code on Demand (optional)
+
+Rarely used (e.g., sending JS code)
+REST also allows client functionality to be extended by downloading and executing code in the form of applets or scripts.
+
+# What is a Resource?
+
+The key abstraction of information in REST is a resource. Any information that we can name can be a resource. For example, a REST resource can be a document or image, or a collection of other resources
+The resource representations consist of:
+
+the data
+
+the metadata describing the data
+
+and the hypermedia links that can help the clients transition to the next desired state.
+
+# CORS (Very Important for Frontend)
+
+CORS (Cross-Origin Resource Sharing)
+
+Browser security feature
+
+Required when frontend & backend are on different domains
+
+Common error: CORS policy blocked
+
+# API Testing Tools
+
+Postman
+
+curl
+
+# Auth Basics
+
+Authentication → who you are
+
+Authorization → what you can do
+
+Token-Based Auth
+
+JWT structure:
+
+Header
+
+Payload
+
+Signature
+
+Sent via:
+
+Authorization: Bearer <JWT>
