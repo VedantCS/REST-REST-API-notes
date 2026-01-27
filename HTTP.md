@@ -127,7 +127,7 @@ Grouped by category:
 | 502  | Bad gateway           |
 | 503  | Service unavailable   |
 
-👉 **Backend devs choose the status code** — it’s part of your API design.
+ **Backend devs choose the status code** — it’s part of your API design.
 
 ---
 
@@ -308,6 +308,237 @@ Important for retries and APIs.
 * Browser DevTools → Network tab
 
 ---
+
+
+### What an HTTP session is
+
+HTTP itself is **stateless** — every request is independent.
+An **HTTP session** is a way for a server to remember a user **across multiple requests** (login state, cart items, preferences, etc.).
+
+### How it works (typical flow)
+
+1. User sends a request (e.g., logs in)
+2. Server creates a **session object** (stored in memory, DB, Redis, etc.)
+3. Server sends back a **session ID**
+4. Browser stores that ID (usually in a **cookie**)
+5. On every next request, the browser sends the session ID
+6. Server looks up the session data using that ID
+
+### Where session data lives
+
+* **Server-side**:
+
+  * Memory (fast, but not scalable)
+  * Database
+  * Redis / Memcached (very common)
+* **Client-side** (less common):
+
+  * Encrypted cookies (e.g., JWT-style sessions)
+
+### Session vs Cookie
+
+| Feature  | Session              | Cookie                |
+| -------- | -------------------- | --------------------- |
+| Stored   | Server               | Browser               |
+| Size     | Large                | Small (≈4KB)          |
+| Security | More secure          | Less secure           |
+| Lifetime | Controlled by server | Controlled by browser |
+
+Cookies often **store only the session ID**, not the data.
+
+### Common uses
+
+* User authentication (logged in / logged out)
+* Shopping carts
+* CSRF protection
+* User preferences
+
+### Example (conceptual)
+
+```text
+Client → POST /login
+Server → Set-Cookie: SESSION_ID=abc123
+
+Client → GET /dashboard (with SESSION_ID)
+Server → Loads session abc123 → user = "Alice"
+```
+
+### Common pitfalls
+
+* Sessions stored only in memory → break when server restarts
+* No expiration → security risk
+* Not using HTTPS → session hijacking
+* Multiple servers without shared session store → users “randomly logged out”
+
+---
+
+## What is `HttpSession` in Java
+
+In Java web apps (Servlets, JSP, Spring MVC), an **`HttpSession`** lets the server remember a user between HTTP requests.
+
+Package:
+
+```java
+import jakarta.servlet.http.HttpSession;
+// (or javax.servlet.http.HttpSession in older versions)
+```
+
+---
+
+## How it works
+
+1. User sends a request
+2. Server creates a session (`HttpSession`)
+3. Server sends a **session ID** (`JSESSIONID`) in a cookie
+4. Browser sends `JSESSIONID` with every request
+5. Server uses it to find the session data
+
+---
+
+## Creating / getting a session
+
+```java
+HttpSession session = request.getSession(); // creates if not exists
+```
+
+If you *don’t* want to create one automatically:
+
+```java
+HttpSession session = request.getSession(false); // returns null if none
+```
+
+---
+
+## Storing data in a session
+
+```java
+session.setAttribute("username", "Alice");
+session.setAttribute("role", "ADMIN");
+```
+
+Retrieve it later:
+
+```java
+String username = (String) session.getAttribute("username");
+```
+
+Remove an attribute:
+
+```java
+session.removeAttribute("username");
+```
+
+---
+
+## Invalidating a session (logout)
+
+```java
+session.invalidate();
+```
+
+This:
+
+* clears all attributes
+* destroys the session
+* makes the `JSESSIONID` useless
+
+---
+
+## Session timeout
+
+Set manually:
+
+```java
+session.setMaxInactiveInterval(30 * 60); // 30 minutes (seconds)
+```
+
+Or in `web.xml`:
+
+```xml
+<session-config>
+    <session-timeout>30</session-timeout> <!-- minutes -->
+</session-config>
+```
+
+---
+
+## Example: Login + protected page
+
+### Login Servlet
+
+```java
+protected void doPost(HttpServletRequest request, HttpServletResponse response)
+        throws IOException {
+
+    String user = request.getParameter("username");
+    String pass = request.getParameter("password");
+
+    if ("admin".equals(user) && "1234".equals(pass)) {
+        HttpSession session = request.getSession();
+        session.setAttribute("user", user);
+        response.sendRedirect("dashboard");
+    } else {
+        response.sendRedirect("login.jsp?error=true");
+    }
+}
+```
+
+### Protected Servlet
+
+```java
+protected void doGet(HttpServletRequest request, HttpServletResponse response)
+        throws IOException {
+
+    HttpSession session = request.getSession(false);
+
+    if (session == null || session.getAttribute("user") == null) {
+        response.sendRedirect("login.jsp");
+        return;
+    }
+
+    response.getWriter().println("Welcome!");
+}
+```
+
+---
+
+## `JSESSIONID`
+
+* Stored in a **cookie**
+* Automatically managed by the container (Tomcat, Jetty, etc.)
+* Can also be URL-rewritten (not recommended):
+
+```java
+response.encodeURL("dashboard");
+```
+
+---
+
+## Best practices 
+
+* Always use **HTTPS**
+* Call `getSession(false)` for protected pages
+* Regenerate session after login (prevent session fixation)
+* Don’t store large objects in session
+* Avoid storing DB connections in session
+
+---
+
+## Spring Boot note (if relevant)
+
+In Spring:
+
+```java
+@GetMapping("/profile")
+public String profile(HttpSession session) {
+    String user = (String) session.getAttribute("user");
+    return "profile";
+}
+```
+
+---
+
+
 
 
 
